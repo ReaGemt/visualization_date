@@ -133,17 +133,20 @@ def plot_pie_chart(category_sales):
         raise
 
 
-def plot_funnel_chart(funnel_data, filename="output_funnel_chart.html"):
-    """
-    Построение и сохранение маркетинговой воронки в HTML с оптимизированными цветами.
+import logging
+import plotly.graph_objects as go
 
-    Параметры:
-        funnel_data (pd.DataFrame или dict): Данные, содержащие минимум два столбца:
-            'Шаг' – названия этапов воронки (ось Y),
-            'Количество пользователей' – значения (ось X).
-        filename (str): Путь и имя выходного файла HTML. По умолчанию "output_funnel_chart.html".
+logger = logging.getLogger(__name__)
+
+def plot_funnel_chart(funnel_data, filename="output_funnel_chart.png"):
     """
-    logger.info("Начало построения маркетинговой воронки (HTML)")
+    Построение и сохранение маркетинговой воронки в PNG со 100% отображением чисел, без сокращений вроде 10k.
+    Параметры:
+        funnel_data (pd.DataFrame): Колонки 'Шаг' (этап) и 'Количество пользователей' (значения).
+        filename (str): Имя выходного PNG-файла.
+    """
+
+    logger.info("Начало построения маркетинговой воронки (PNG)")
 
     required_columns = {'Шаг', 'Количество пользователей'}
     if not required_columns.issubset(funnel_data.columns):
@@ -151,44 +154,50 @@ def plot_funnel_chart(funnel_data, filename="output_funnel_chart.html"):
         return
 
     try:
-        # Более мягкая цветовая гамма (пример пастельных или «business-friendly» тонов)
+        # Пример цветовой гаммы пастельных оттенков
         color_palette = [
             "#87CEEB",  # светло-синий
             "#FFD700",  # золотистый
             "#ADFF2F",  # зеленовато-салатовый
             "#FFB6C1",  # пастельно-розовый
             "#FF8C00",  # оранжевый оттенок
-            "#B0C4DE"  # серовато-голубой
+            "#B0C4DE"   # серовато-голубой
         ]
 
-        # Построение фигуры (воронки)
         fig = go.Figure(go.Funnel(
             y=funnel_data['Шаг'],
             x=funnel_data['Количество пользователей'],
             textposition="inside",
-            textinfo="value+percent initial",
             marker=dict(color=color_palette),
             connector=dict(line=dict(color="lightgray", width=2, dash="dot"))
         ))
 
-        # Обновление макета для приятного внешнего вида
+        # Настраиваем подписи внутри сегментов так, чтобы они не сокращали числа
+        fig.update_traces(
+            texttemplate='%{value:.0f}',  # показывает число без сокращений (целое)
+            textposition='inside'
+        )
+
+        # Оформляем макет
         fig.update_layout(
             title="Маркетинговая воронка",
             yaxis=dict(title="Этапы воронки"),
-            xaxis=dict(title="Количество пользователей"),
+            xaxis=dict(
+                title="Количество пользователей",
+                # Отключаем сокращения в числах на оси X
+                tickformat='.0f'
+            ),
             paper_bgcolor="white",
             plot_bgcolor="white",
             font=dict(size=12)
         )
 
         logger.info(f"Попытка сохранить воронку в файл {filename}")
-        fig.write_html(filename, auto_open=False)
+        fig.write_image(filename)
         logger.info(f"Воронка успешно сохранена в {filename}")
 
     except Exception as e:
-        logger.error(f"Ошибка при сохранении воронки в HTML: {str(e)}", exc_info=True)
-        # В случае ошибки всё ещё можем отобразить график интерактивно
-        fig.show()
+        logger.error(f"Ошибка при сохранении воронки: {str(e)}", exc_info=True)
         logger.info("Воронка отображена интерактивно из-за ошибки.")
 
 
