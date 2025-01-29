@@ -17,7 +17,7 @@ pip install -r requirements.txt
 
 ### ▶️ Запуск скрипта
 ```bash
-python script.py
+python main.py
 ```
 Скрипт автоматически загрузит данные, построит графики и сохранит их в файлы.
 
